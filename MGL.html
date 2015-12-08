@@ -1,0 +1,1206 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title></title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library MGL</h1>
+
+<div class="code">
+</div>
+
+<div class="doc">
+In <i>Satan, Cantor, and Infinity</i>, Raymond Smullyan shows that we can express Goedel sentences, undecidable sentences, fixed points, and many other self-referential sentences in a language with only four symbols. Its minimalism makes for a good exercise for Coq beginners. Here's a step-by-step implementation and partial proof automation of the language, interspersed with the original text (in italics). 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">List</span> <span class="id" title="var">Omega</span> <span class="id" title="var">Classical</span> <span class="id" title="var">Coq.Arith.Div2</span> <span class="id" title="var">LibTactics</span>.<br/>
+<span class="id" title="keyword">Import</span> <span class="id" title="var">ListNotations</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+The <span class="inlinecode"><span class="id" title="var">LibTactics</span></span> library from <i>Software Foundations</i> (http://www.cis.upenn.edu/~bcpierce/sf/current/LibTactics.html) is used for its useful <span class="inlinecode"><span class="id" title="var">jauto</span></span> and <span class="inlinecode"><span class="id" title="var">iauto</span></span> tactics. 
+</div>
+<div class="code">
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <i> "TODAY," said the Sorcerer, "I want to show you a miniature version of Goedel's famous incompleteness theorem. It will serve as a bridge from what we did last time to what we'll get into a bit later. The system I will now present is a modernized and streamlined version of a Smullyan 'language,' I shall use the quotationless method I showed you last time in place of Smullyan's one-sided quotation. "In the system, various sentences can be proved. The system uses the four symbols P, P*, Q, Q*." </i>  
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">symbol</span> : <span class="id" title="keyword">Type</span> := <span class="id" title="var">p</span> | <span class="id" title="var">q</span> | <span class="id" title="var">P</span> | <span class="id" title="var">Q</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+The symbols use slightly different characters for code legibility. Uppercase indicates duplicative symbols. 
+</div>
+<div class="code">
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <i> "The symbol P means provability in the system - thus, for any expression X in the language of the system, PX asserts that X is provable in the system and accordingly will be called <b>true</b> if and only if X is provable in the system. The symbol Q stands for nonprovability in the system and for any expression X, QX asserts that X is not provable in the system and QX is called <b>true</b> just in the case that X is not provable in the system. Next, P*X means that XX is provable in the system, and is accordingly <b>true</b> if and only if this is the case. Lastly, Q*X means that XX is not provable in the system, and is called <b>true</b> if and only if XX is not provable in the system. By a <b>sentence</b> is meant any expression of one of the four forms PX, P*X, QX, Q*X, where X is any combination of the four symbols." </i>  
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">sentence</span> : <span class="id" title="keyword">Type</span> := <span class="id" title="var">list</span> <span class="id" title="var">symbol</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <i> "I henceforth use the word <b>provable</b> to mean provable in the system. Let us review the basic facts." </i> 
+
+<div class="paragraph"> </div>
+
+<ul class="doclist">
+<li>  <i> (1) PX asserts that X is provable. </i>  
+
+</li>
+<li>  <i> (2) QX asserts that X is not provable. </i>   
+
+</li>
+<li>  <i> (3) P*X asserts that XX is provable. </i>  
+
+</li>
+<li>  <i> (4) Q*X asserts that XX is not provable. </i>  
+
+</li>
+</ul>
+ <br><i> "We see that the system is self-referential in that it proves various sentences that assert what the system can and cannot prove." </i>  
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Variable</span> <span class="id" title="var">true</span> : <span class="id" title="var">sentence</span> -&gt; <span class="id" title="keyword">Prop</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Notation</span> &quot;&acute;provable&acute; X" := (<span class="id" title="var">true</span> (<span class="id" title="var">p</span> :: <span class="id" title="var">X</span>))<br/>
+(<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 60).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Truth is primitive, and provability is defined in terms of truth. The converse is also possible, but it makes <span class="inlinecode"><span class="id" title="var">true</span></span> <span class="inlinecode"><span class="id" title="var">X</span></span> unfold in a messy way (it depends on the first symbol of <span class="inlinecode"><span class="id" title="var">X</span></span>). We can also make both <span class="inlinecode"><span class="id" title="var">true</span></span> and <span class="inlinecode"><span class="id" title="var">provable</span></span> primitive and define their relationship as an additional axiom, but it is more work for no obvious benefit. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Axiom</span> <span class="id" title="var">Aq1</span> : <span class="id" title="keyword">forall</span> (<span class="id" title="var">X</span> : <span class="id" title="var">sentence</span>),<br/>
+<span class="id" title="var">true</span> (<span class="id" title="var">q</span> :: <span class="id" title="var">X</span>) -&gt; ~ <span class="id" title="var">provable</span> <span class="id" title="var">X</span>.<br/>
+<span class="id" title="keyword">Local</span>&nbsp;<span class="id" title="keyword">Hint Resolve</span> <span class="id" title="var">Aq1</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Axiom</span> <span class="id" title="var">Aq2</span> : <span class="id" title="keyword">forall</span> (<span class="id" title="var">X</span> : <span class="id" title="var">sentence</span>),<br/>
+~ <span class="id" title="var">provable</span> <span class="id" title="var">X</span> -&gt; <span class="id" title="var">true</span> (<span class="id" title="var">q</span> :: <span class="id" title="var">X</span>).<br/>
+<span class="id" title="keyword">Local</span>&nbsp;<span class="id" title="keyword">Hint Resolve</span> <span class="id" title="var">Aq2</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Axiom</span> <span class="id" title="var">AP1</span> : <span class="id" title="keyword">forall</span> (<span class="id" title="var">X</span> : <span class="id" title="var">sentence</span>),<br/>
+<span class="id" title="var">true</span> (<span class="id" title="var">P</span> :: <span class="id" title="var">X</span>) -&gt; <span class="id" title="var">provable</span> (<span class="id" title="var">X</span> ++ <span class="id" title="var">X</span>).<br/>
+<span class="id" title="keyword">Local</span>&nbsp;<span class="id" title="keyword">Hint Resolve</span> <span class="id" title="var">AP1</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Axiom</span> <span class="id" title="var">AP2</span> : <span class="id" title="keyword">forall</span> (<span class="id" title="var">X</span> : <span class="id" title="var">sentence</span>),<br/>
+<span class="id" title="var">provable</span> (<span class="id" title="var">X</span> ++ <span class="id" title="var">X</span>) -&gt; <span class="id" title="var">true</span> (<span class="id" title="var">P</span> :: <span class="id" title="var">X</span>).<br/>
+<span class="id" title="keyword">Local</span>&nbsp;<span class="id" title="keyword">Hint Resolve</span> <span class="id" title="var">AP2</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Axiom</span> <span class="id" title="var">AQ1</span> : <span class="id" title="keyword">forall</span> (<span class="id" title="var">X</span> : <span class="id" title="var">sentence</span>),<br/>
+<span class="id" title="var">true</span> (<span class="id" title="var">Q</span> :: <span class="id" title="var">X</span>) -&gt; ~ <span class="id" title="var">provable</span> (<span class="id" title="var">X</span> ++ <span class="id" title="var">X</span>).<br/>
+<span class="id" title="keyword">Local</span>&nbsp;<span class="id" title="keyword">Hint Resolve</span> <span class="id" title="var">AQ1</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Axiom</span> <span class="id" title="var">AQ2</span> : <span class="id" title="keyword">forall</span> (<span class="id" title="var">X</span> : <span class="id" title="var">sentence</span>),<br/>
+~ <span class="id" title="var">provable</span> (<span class="id" title="var">X</span> ++ <span class="id" title="var">X</span>) -&gt; <span class="id" title="var">true</span> (<span class="id" title="var">Q</span> :: <span class="id" title="var">X</span>).<br/>
+<span class="id" title="keyword">Local</span>&nbsp;<span class="id" title="keyword">Hint Resolve</span> <span class="id" title="var">AQ2</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+These axioms correspond to the semantics of Q, P*, and Q*. Although their natural form is biconditional, they are split into conditionals to let <span class="inlinecode"><span class="id" title="tactic">auto</span></span> apply them automatically. 
+</div>
+<div class="code">
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <i> "We are given that the system is wholly accurate in that every sentence provable in the system is true - in other words the following four conditions hold (where X is any expression)." </i> 
+
+<div class="paragraph"> </div>
+
+<ul class="doclist">
+<li>  <i> C1: If PX is provable so is X. </i> 
+
+</li>
+<li>  <i> C2: If QX is provable then X is not provable. </i>  
+
+</li>
+<li>  <i> C3: If P*X is provable so is XX. </i>  
+
+</li>
+<li>  <i> C4: If Q*X is provable then XX is not provable. </i>  
+</li>
+</ul>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Axiom</span> <span class="id" title="var">C1</span> : <span class="id" title="keyword">forall</span> (<span class="id" title="var">X</span> : <span class="id" title="var">sentence</span>),<br/>
+<span class="id" title="var">provable</span> (<span class="id" title="var">p</span> :: <span class="id" title="var">X</span>) -&gt; <span class="id" title="var">provable</span> <span class="id" title="var">X</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Axiom</span> <span class="id" title="var">C2</span> : <span class="id" title="keyword">forall</span> (<span class="id" title="var">X</span> : <span class="id" title="var">sentence</span>),<br/>
+<span class="id" title="var">provable</span> (<span class="id" title="var">q</span> :: <span class="id" title="var">X</span>) -&gt; ~ <span class="id" title="var">provable</span> <span class="id" title="var">X</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Axiom</span> <span class="id" title="var">C3</span> : <span class="id" title="keyword">forall</span> (<span class="id" title="var">X</span> : <span class="id" title="var">sentence</span>),<br/>
+<span class="id" title="var">provable</span> (<span class="id" title="var">P</span> :: <span class="id" title="var">X</span>) -&gt; <span class="id" title="var">provable</span> (<span class="id" title="var">X</span> ++ <span class="id" title="var">X</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Axiom</span> <span class="id" title="var">C4</span> : <span class="id" title="keyword">forall</span> (<span class="id" title="var">X</span> : <span class="id" title="var">sentence</span>),<br/>
+<span class="id" title="var">provable</span> (<span class="id" title="var">Q</span> :: <span class="id" title="var">X</span>) -&gt; ~ <span class="id" title="var">provable</span> (<span class="id" title="var">X</span> ++ <span class="id" title="var">X</span>).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Conditions C1-4 assert that MGL is sound (each consequent is equivalent to <span class="inlinecode"><span class="id" title="var">true</span></span> <span class="inlinecode">(<span class="id" title="var">H</span></span> <span class="inlinecode">::</span> <span class="inlinecode"><span class="id" title="var">X</span>)</span>, where <span class="inlinecode"><span class="id" title="var">H</span></span> is the head symbol in antecedent). If so, why not prove the general soundness claim <span class="inlinecode"><span class="id" title="keyword">forall</span></span> <span class="inlinecode"><span class="id" title="var">X</span></span> <span class="inlinecode">:</span> <span class="inlinecode"><span class="id" title="var">sentence</span>,</span> <span class="inlinecode"><span class="id" title="var">provable</span></span> <span class="inlinecode"><span class="id" title="var">X</span></span> <span class="inlinecode">-&gt;</span> <span class="inlinecode"><span class="id" title="var">true</span></span> <span class="inlinecode"><span class="id" title="var">X</span></span>? This theorem would be useful for reasoning with sentences whose first symbol is unknown. 
+
+<div class="paragraph"> </div>
+
+We can't do it with C1-4, because <span class="inlinecode">[]</span> is a <span class="inlinecode"><span class="id" title="var">sentence</span></span> in our implementation. There are two ways around this. First, we can redefine <span class="inlinecode"><span class="id" title="var">sentence</span></span> as an inductive type with eight constructors, giving a nullary and unary constructor to each symbol. This would ensure that every sentence is nonempty. It is much simpler, however, to add the axiom 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Axiom</span> <span class="id" title="var">ATN</span> : <span class="id" title="var">true</span> [].<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+with which we can show 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">LS1</span> : <span class="id" title="keyword">forall</span> (<span class="id" title="var">X</span> : <span class="id" title="var">sentence</span>),<br/>
+<span class="id" title="var">provable</span> <span class="id" title="var">X</span> -&gt; <span class="id" title="var">true</span> <span class="id" title="var">X</span>.<br/>
+<span class="id" title="keyword">Hint Resolve</span> <span class="id" title="var">LS1</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">LS2</span> : <span class="id" title="keyword">forall</span> (<span class="id" title="var">X</span> : <span class="id" title="var">sentence</span>),<br/>
+~ <span class="id" title="var">true</span> <span class="id" title="var">X</span> -&gt; ~ <span class="id" title="var">provable</span> <span class="id" title="var">X</span>.<br/>
+<span class="id" title="var">Hint Resolve</span> <span class="id" title="var">LS2</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<span class="inlinecode"><span class="id" title="var">ATN</span></span> may be justified on the grounds that the truth of <span class="inlinecode">[]</span> cannot be used to prove the truth/falsity of any nonempty sentence. This is clear from the fact that every sentence which occurs in other axioms is nonempty. The truth value we assign to <span class="inlinecode">[]</span> is purely a matter of convenience.
+
+<div class="paragraph"> </div>
+
+Now we prove some lemmas that help automation. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">HQq</span> : <span class="id" title="keyword">forall</span> (<span class="id" title="var">X</span> : <span class="id" title="var">sentence</span>),<br/>
+<span class="id" title="var">true</span> (<span class="id" title="var">Q</span> :: <span class="id" title="var">X</span>) -&gt; <span class="id" title="var">true</span> (<span class="id" title="var">q</span> :: <span class="id" title="var">X</span> ++ <span class="id" title="var">X</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">HqQ</span> : <span class="id" title="keyword">forall</span> (<span class="id" title="var">X</span> : <span class="id" title="var">sentence</span>),<br/>
+<span class="id" title="var">true</span> (<span class="id" title="var">q</span> :: <span class="id" title="var">X</span> ++ <span class="id" title="var">X</span>) -&gt; <span class="id" title="var">true</span> (<span class="id" title="var">Q</span> :: <span class="id" title="var">X</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">HPQ</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">X</span>,<br/>
+~ <span class="id" title="var">true</span> (<span class="id" title="var">P</span> :: <span class="id" title="var">X</span>) &lt;-&gt; <span class="id" title="var">true</span> (<span class="id" title="var">Q</span> :: <span class="id" title="var">X</span>).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+These lemmas provide shortcuts when making inferences between two sentences that start with <span class="inlinecode"><span class="id" title="var">q</span></span>, <span class="inlinecode"><span class="id" title="var">P</span></span>, and <span class="inlinecode"><span class="id" title="var">Q</span></span>. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">reuse_2</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">P</span> <span class="id" title="var">Q</span> <span class="id" title="var">R</span> : <span class="id" title="keyword">Prop</span>, <br/>
+<span class="id" title="var">P</span> -&gt; <span class="id" title="var">Q</span> -&gt; (<span class="id" title="var">P</span> -&gt; <span class="id" title="var">Q</span> -&gt; <span class="id" title="var">R</span>) -&gt; (<span class="id" title="var">P</span> /\ <span class="id" title="var">Q</span> /\ <span class="id" title="var">R</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">reuse_3</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">P</span> <span class="id" title="var">Q</span> <span class="id" title="var">R</span> <span class="id" title="var">S</span> : <span class="id" title="keyword">Prop</span>,<br/>
+<span class="id" title="var">P</span> -&gt; <span class="id" title="var">Q</span> -&gt; <span class="id" title="var">R</span> -&gt; (<span class="id" title="var">P</span> -&gt; <span class="id" title="var">Q</span> -&gt; <span class="id" title="var">R</span> -&gt; <span class="id" title="var">S</span>) <br/>
+-&gt; (<span class="id" title="var">P</span> /\ <span class="id" title="var">Q</span> /\ <span class="id" title="var">R</span> /\ <span class="id" title="var">S</span>). <br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">not_imply_or</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">P</span> <span class="id" title="var">Q</span> : <span class="id" title="keyword">Prop</span>,<br/>
+(~ <span class="id" title="var">P</span> -&gt; <span class="id" title="var">Q</span>) -&gt; (<span class="id" title="var">P</span> \/ <span class="id" title="var">Q</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">iff_neg</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">P</span> <span class="id" title="var">Q</span>,<br/>
+( <span class="id" title="var">P</span> &lt;-&gt; <span class="id" title="var">Q</span> ) -&gt; ( ~ <span class="id" title="var">P</span> &lt;-&gt; ~ <span class="id" title="var">Q</span> ).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">iff_trans</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">P</span> <span class="id" title="var">Q</span> <span class="id" title="var">R</span>,<br/>
+(<span class="id" title="var">P</span> &lt;-&gt; <span class="id" title="var">Q</span>) -&gt; (<span class="id" title="var">Q</span> &lt;-&gt; <span class="id" title="var">R</span>) -&gt; (<span class="id" title="var">P</span> &lt;-&gt; <span class="id" title="var">R</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">reductio_t</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">X</span>,<br/>
+( ~ <span class="id" title="var">true</span> <span class="id" title="var">X</span> -&gt; <span class="id" title="var">true</span> <span class="id" title="var">X</span> ) -&gt; <span class="id" title="var">true</span> <span class="id" title="var">X</span>.<br/>
+<span class="id" title="keyword">Hint Resolve</span> <span class="id" title="var">reductio_t</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">reductio_np</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">X</span>,<br/>
+( <span class="id" title="var">provable</span> <span class="id" title="var">X</span> -&gt; ~ <span class="id" title="var">provable</span> <span class="id" title="var">X</span> ) <br/>
+-&gt; ~ <span class="id" title="var">provable</span> <span class="id" title="var">X</span>. <br/>
+<span class="id" title="keyword">Hint Resolve</span> <span class="id" title="var">reductio_np</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Some tautologies that introduce useful hypothese into context. Note that <span class="inlinecode"><span class="id" title="var">reductio_t</span></span> requires <span class="inlinecode"><span class="id" title="var">NNPP</span></span> of classical logic. 
+
+<div class="paragraph"> </div>
+
+We also need to fix a minor issue with pattern matching. Consider 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">auto_success</span> : <br/>
+<span class="id" title="var">true</span> [<span class="id" title="var">P</span>;<span class="id" title="var">p</span>] -&gt; <span class="id" title="var">provable</span> ([<span class="id" title="var">p</span>] ++ [<span class="id" title="var">p</span>]).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+which <span class="inlinecode"><span class="id" title="tactic">auto</span></span> can prove automatically, because <span class="inlinecode"><span class="id" title="var">AP1</span></span> is available in the default hint database. Compare 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">auto_fail</span> : <br/>
+<span class="id" title="var">true</span> [<span class="id" title="var">P</span>;<span class="id" title="var">p</span>] -&gt; <span class="id" title="var">provable</span> [<span class="id" title="var">p</span>;<span class="id" title="var">p</span>].<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+which is equivalent to <span class="inlinecode"><span class="id" title="var">auto_success</span></span>, but fails because <span class="inlinecode"><span class="id" title="var">provable</span></span> <span class="inlinecode">[<span class="id" title="var">p</span>;<span class="id" title="var">p</span>]</span> cannot be matched with the consequent of <span class="inlinecode"><span class="id" title="var">AP1</span></span>. We need to give <span class="inlinecode"><span class="id" title="tactic">auto</span></span> the ability to split up a conclusion <span class="inlinecode"><span class="id" title="var">provable</span></span> <span class="inlinecode"><span class="id" title="var">XX</span></span> into <span class="inlinecode"><span class="id" title="var">provable</span></span> <span class="inlinecode">(<span class="id" title="var">X</span></span> <span class="inlinecode">++</span> <span class="inlinecode"><span class="id" title="var">X</span>)</span>. Here's one way to do it. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">merge_p</span> : <span class="id" title="keyword">forall</span> (<span class="id" title="var">X</span> : <span class="id" title="var">sentence</span>),<br/>
+<span class="id" title="var">provable</span> ( <span class="id" title="var">firstn</span> (<span class="id" title="var">div2</span> (<span class="id" title="var">length</span> <span class="id" title="var">X</span>)) <span class="id" title="var">X</span> ++ <br/>
+<span class="id" title="var">skipn</span> (<span class="id" title="var">div2</span> (<span class="id" title="var">length</span> <span class="id" title="var">X</span>)) <span class="id" title="var">X</span>) -&gt; <span class="id" title="var">provable</span> <span class="id" title="var">X</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">merge_q</span> : <span class="id" title="keyword">forall</span> (<span class="id" title="var">X</span> : <span class="id" title="var">sentence</span>),<br/>
+~ <span class="id" title="var">provable</span> ( <span class="id" title="var">firstn</span> (<span class="id" title="var">div2</span> (<span class="id" title="var">length</span> <span class="id" title="var">X</span>)) <span class="id" title="var">X</span> ++<br/>
+<span class="id" title="var">skipn</span> (<span class="id" title="var">div2</span> (<span class="id" title="var">length</span> <span class="id" title="var">X</span>)) <span class="id" title="var">X</span>) -&gt; ~ <span class="id" title="var">provable</span> <span class="id" title="var">X</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+We are now ready to tackle our first problem. 
+</div>
+<div class="code">
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <i> "Now, just because every sentence provable in the system is true, it doesn't necessarily follow that every true sentence is provable in the system. As a matter of fact, there happens to be a sentence that is true but not provable in the system. Can you find it?" </i>  
+<div class="paragraph"> </div>
+
+  <center> <b> <i> * 1 * </i> </b> </center>  
+<div class="paragraph"> </div>
+
+  <center> <i> Find a true sentence that is not provable in the system. </i> </center>  
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P1</span> : <br/>
+<span class="id" title="var">true</span> [<span class="id" title="var">Q</span>;<span class="id" title="var">Q</span>] /\ ~ <span class="id" title="var">provable</span> [<span class="id" title="var">Q</span>;<span class="id" title="var">Q</span>].<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <i> <b>Refutable Sentences.</b> "For each sentence, we define its <b>conjugate</b> as follows. The conjugate of PX is QX, and the conjugate of QX is PX. The conjugate of P*X is Q*X and the conjugate of Q*X is P*X. Thus the sentences PX and QX are conjugates of each other, and the sentences P*X and Q*X are conjugates of each other. Given any conjugate pair, it is obvious that one of the pair is true and the other false. </i>  
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">conjugate</span> (<span class="id" title="var">X</span> : <span class="id" title="var">sentence</span>) :<br/>
+<span class="id" title="var">sentence</span> := <span class="id" title="keyword">match</span> <span class="id" title="var">X</span> <span class="id" title="keyword">with</span><br/>
+| [] =&gt; []<br/>
+| <span class="id" title="var">p</span> :: <span class="id" title="var">X&acute;</span> =&gt; <span class="id" title="var">q</span> :: <span class="id" title="var">X&acute;</span><br/>
+| <span class="id" title="var">q</span> :: <span class="id" title="var">X&acute;</span> =&gt; <span class="id" title="var">p</span> :: <span class="id" title="var">X&acute;</span><br/>
+| <span class="id" title="var">P</span> :: <span class="id" title="var">X&acute;</span> =&gt; <span class="id" title="var">Q</span> :: <span class="id" title="var">X&acute;</span><br/>
+| <span class="id" title="var">Q</span> :: <span class="id" title="var">X&acute;</span> =&gt; <span class="id" title="var">P</span> :: <span class="id" title="var">X&acute;</span><br/>
+<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <i> "A sentence is called <b>refutable</b> (in the system) if its conjugate is provable (in the system). Thus, PX is refutable if and only if QX is provable, and PX is provable if and only if QX is refutable. Likewise with P*X and Q*X." </i>  
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Notation</span> &quot;&acute;refutable&acute; X" := (<span class="id" title="var">provable</span> (<span class="id" title="var">conjugate</span> <span class="id" title="var">X</span>)) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 70).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <center> <b> <i> * 2 *  </i> </b> </center>  
+<div class="paragraph"> </div>
+
+  <center> <i> Find a sentence that asserts that it is refutable. </i> </center>  
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P2</span> : <br/>
+<span class="id" title="var">true</span> [<span class="id" title="var">P</span>;<span class="id" title="var">Q</span>] &lt;-&gt; <span class="id" title="var">refutable</span> [<span class="id" title="var">P</span>;<span class="id" title="var">Q</span>].<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <center> <b> <i> * 3 * </i> </b> </center>  
+<div class="paragraph"> </div>
+
+  <center> <i> Find a sentence that asserts that it is not refutable. </i> </center>  
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P3</span> : <br/>
+<span class="id" title="var">true</span> [<span class="id" title="var">Q</span>;<span class="id" title="var">P</span>] &lt;-&gt; ~ <span class="id" title="var">refutable</span> [<span class="id" title="var">Q</span>;<span class="id" title="var">P</span>].<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <center> <b> <i> * 4 * </i> </b> </center>  
+<div class="paragraph"> </div>
+
+  <center> <i> What sentence asserts that it is provable? </i> </center>  
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P4</span> :<br/>
+<span class="id" title="var">true</span> [<span class="id" title="var">P</span>;<span class="id" title="var">P</span>] &lt;-&gt; <span class="id" title="var">provable</span> [<span class="id" title="var">P</span>;<span class="id" title="var">P</span>].<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <i> <b>Undecidable Sentences.</b> "A sentence is called <b>undecidable</b> (in the system) if it is neither provable nor refutable in the system," said the Sorcerer. "Now, as you saw in the solution of Problem 1, the sentence Q*Q* is true but not provable in the system. Since it is true, then its conjugate P*Q* is false, hence also not provable in the system. Thus the sentence Q*Q* is undecidable in the system." </i>  
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Notation</span> &quot;&acute;undecidable&acute; X" := <br/>
+(~ <span class="id" title="var">provable</span> <span class="id" title="var">X</span> /\ ~ <span class="id" title="var">refutable</span> <span class="id" title="var">X</span>)<br/>
+(<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 65).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <i> "My argument has appealed to the notion of truth, but even without appeal to this notion one can obtain the undecidability of Q*Q* as a direct consequence of conditions C1 through C4 as follows: Suppose were Q*Q* provable. Then by C4, taking Q* for X, the repeat of Q* is not provable, which means that Q*Q* is not provable. So if Q*Q* is provable, then it is not provable, which is a contradiction. Therefore, Q*Q* is not provable. If its conjugate P*Q* were provable, then by C3 (taking Q* for X) Q*Q* would be provable, which we just saw is not the case. And so P*Q* is not provable either. Thus the sentence Q*Q* is undecidable in the system." 
+	
+<br> <br> 
+
+"Tell me this," said Annabelle. "Is Q*Q* the only sentence that is true but unprovable, or are there others?" 
+
+<br> <br> 
+	
+"The sentence Q*Q* ," replied the Sorcerer, "is the only sentence that I know of having the property that for <b>every</b> system satisfying conditions C1 through C4, it is true for that system and unprovable in that system. But, as you will see later, for any system satisfying C1 through C4, there are other sentences that are true but unprovable in that system. The sentence Q*Q* is, as I said, the only sentence that I know that simultaneously works for <b>all</b> systems satisfying C1 through C4. </i>  
+</div>
+<div class="code">
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Another way to pose the question: Does <span class="inlinecode">(</span> <span class="inlinecode"><span class="id" title="var">MGL</span></span> <span class="inlinecode">|-</span> <span class="inlinecode"><span class="id" title="var">true</span></span> <span class="inlinecode"><span class="id" title="var">X</span></span> <span class="inlinecode">/\</span> <span class="inlinecode">~</span> <span class="inlinecode"><span class="id" title="var">provable</span></span> <span class="inlinecode"><span class="id" title="var">X</span></span> <span class="inlinecode">)</span> <span class="inlinecode">=&gt;</span> <span class="inlinecode">(</span> <span class="inlinecode"><span class="id" title="var">X</span></span> <span class="inlinecode">=</span> <span class="inlinecode"><span class="id" title="var">QQ</span></span> <span class="inlinecode">)</span> hold for all <span class="inlinecode"><span class="id" title="var">X</span></span>? It is an interesting problem, but its proof requires (among others) a definition of theoremhood in MGL, which we do not have in the current implementation. 
+</div>
+<div class="code">
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <i> The Sorcerer then gave the following problems: </i>  
+<div class="paragraph"> </div>
+
+  <center> <i> <b> 5 * Some Fixed-Point Properties </b> </i> </center>  
+<div class="paragraph"> </div>
+
+  <i> Show that for any expression E there is a sentence X that asserts that EX is provable (X is true if and only if EX is provable) and there is some X that asserts that EX is not provable. </i>  
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P5A</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">E</span>, <span class="id" title="tactic">exists</span> <span class="id" title="var">X</span>,<br/>
+<span class="id" title="var">true</span> <span class="id" title="var">X</span> &lt;-&gt; <span class="id" title="var">provable</span> (<span class="id" title="var">E</span> ++ <span class="id" title="var">X</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P5B</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">E</span>, <span class="id" title="tactic">exists</span> <span class="id" title="var">X</span>,<br/>
+<span class="id" title="var">true</span> <span class="id" title="var">X</span> &lt;-&gt; ~ <span class="id" title="var">provable</span> (<span class="id" title="var">E</span> ++ <span class="id" title="var">X</span>).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <center> <i> <b> 6 * Some Anti-Fixed-Point Properties </b> </i> </center>  
+<div class="paragraph"> </div>
+
+  <i> For any sentence X, let -X be the conjugate of X. </i>  
+<div class="paragraph"> </div>
+
+  <i> Show that for any expression E there is some sentence X that asserts that E-X is provable and a sentence X that asserts that E-X is not provable. </i>  
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P6A</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">E</span>, <span class="id" title="tactic">exists</span> <span class="id" title="var">X</span>,<br/>
+<span class="id" title="var">true</span> <span class="id" title="var">X</span> &lt;-&gt; <span class="id" title="var">provable</span> (<span class="id" title="var">E</span> ++ <span class="id" title="var">conjugate</span> <span class="id" title="var">X</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P6B</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">E</span>, <span class="id" title="tactic">exists</span> <span class="id" title="var">X</span>,<br/>
+<span class="id" title="var">true</span> <span class="id" title="var">X</span> &lt;-&gt; ~ <span class="id" title="var">provable</span> (<span class="id" title="var">E</span> ++ <span class="id" title="var">conjugate</span> <span class="id" title="var">X</span>).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <i> Next, the Sorcerer presented some problems in cross-reference.</i>  
+</div>
+<div class="code">
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Problems 7-11 have the form <span class="inlinecode"><span class="id" title="tactic">exists</span></span> <span class="inlinecode"><span class="id" title="var">X</span></span> <span class="inlinecode"><span class="id" title="var">Y</span></span> <span class="inlinecode">...</span> <span class="inlinecode">:</span> <span class="inlinecode"><span class="id" title="var">setence</span>,</span> <span class="inlinecode"><span class="id" title="var">A</span></span> <span class="inlinecode">/\</span> <span class="inlinecode"><span class="id" title="var">B</span></span>, where <span class="inlinecode"><span class="id" title="var">A</span></span> logically entails <span class="inlinecode"><span class="id" title="var">B</span></span>. We exploit this pattern by proving <span class="inlinecode"><span class="id" title="keyword">forall</span></span> <span class="inlinecode"><span class="id" title="var">X</span></span> <span class="inlinecode"><span class="id" title="var">Y</span></span> <span class="inlinecode">...</span> <span class="inlinecode">:</span> <span class="inlinecode"><span class="id" title="var">sentence</span>,</span> <span class="inlinecode"><span class="id" title="var">A</span></span> <span class="inlinecode">-&gt;</span> <span class="inlinecode"><span class="id" title="var">B</span></span> as a separate lemma, which is easier than proving <span class="inlinecode"><span class="id" title="var">B</span></span> independently for specific sentences. 
+<div class="paragraph"> </div>
+
+ Proving theorems of the form <span class="inlinecode"><span class="id" title="keyword">forall</span></span> <span class="inlinecode"><span class="id" title="var">X</span></span> <span class="inlinecode"><span class="id" title="var">Y</span></span> <span class="inlinecode">...</span> <span class="inlinecode">:</span> <span class="inlinecode"><span class="id" title="var">sentence</span>,</span> <span class="inlinecode"><span class="id" title="var">A</span></span> <span class="inlinecode">-&gt;</span> <span class="inlinecode"><span class="id" title="var">B</span></span> requires the ability to reason about the relationship between truth and refutability of arbitrary sentences. Again, <span class="inlinecode">[]</span> is a minor issue here. We need an additional axiom 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Axiom</span> <span class="id" title="var">ANPN</span> : ~ <span class="id" title="var">provable</span> [].<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<span class="inlinecode"><span class="id" title="var">ANPN</span></span> is justified for the same reason as <span class="inlinecode"><span class="id" title="var">ATN</span></span>, although it's not as obvious that this is the case. <span class="inlinecode"><span class="id" title="var">ANPN</span></span> is equivalent to <span class="inlinecode">~</span> <span class="inlinecode"><span class="id" title="var">true</span></span> <span class="inlinecode">[<span class="id" title="var">p</span>]</span>, from which you can derive <span class="inlinecode">~</span> <span class="inlinecode"><span class="id" title="var">true</span></span> <span class="inlinecode">[<span class="id" title="var">P</span>]</span>, <span class="inlinecode"><span class="id" title="var">true</span></span> <span class="inlinecode">[<span class="id" title="var">q</span>]</span>, <span class="inlinecode"><span class="id" title="var">true</span></span> <span class="inlinecode">[<span class="id" title="var">Q</span>]</span>, and nothing else. Since none of these propositions occur in the chapter, the truth of <span class="inlinecode"><span class="id" title="var">ANPN</span></span> is also a matter of convenience. 
+
+<div class="paragraph"> </div>
+
+With <span class="inlinecode"><span class="id" title="var">ANPN</span></span>, we can make some obvious modal inferences. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">true_irrefutable</span> : <br/>
+<span class="id" title="keyword">forall</span> <span class="id" title="var">X</span>, <span class="id" title="var">true</span> <span class="id" title="var">X</span> -&gt; ~ <span class="id" title="var">refutable</span> <span class="id" title="var">X</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">refutable_false</span> : <br/>
+<span class="id" title="keyword">forall</span> <span class="id" title="var">X</span>, <span class="id" title="var">refutable</span> <span class="id" title="var">X</span> -&gt; ~ <span class="id" title="var">true</span> <span class="id" title="var">X</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <center> <b> <i> * 7 * </i> </b> </center>  
+<div class="paragraph"> </div>
+
+  <i> Find sentences X and Y such that X asserts that Y is provable and Y asserts that X is not provable. (There are two solutions.) Then show that at least one of the sentences X, Y must be true but not provable (though there is no way to tell which). </i>  
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P7L</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">X</span> <span class="id" title="var">Y</span>, <br/>
+( <span class="id" title="var">true</span> <span class="id" title="var">X</span> &lt;-&gt; <span class="id" title="var">provable</span> <span class="id" title="var">Y</span> )<br/>
+-&gt; ( <span class="id" title="var">true</span> <span class="id" title="var">Y</span> &lt;-&gt; ~ <span class="id" title="var">provable</span> <span class="id" title="var">X</span> )<br/>
+-&gt; ( ( <span class="id" title="var">true</span> <span class="id" title="var">X</span> /\ ~ <span class="id" title="var">provable</span> <span class="id" title="var">X</span> ) <br/>
+&nbsp;&nbsp;&nbsp;\/ ( <span class="id" title="var">true</span> <span class="id" title="var">Y</span> /\ ~ <span class="id" title="var">provable</span> <span class="id" title="var">Y</span> ) ).<br/>
+
+<br/>
+<span class="id" title="keyword">Notation</span> <span class="id" title="var">X7</span> := ([<span class="id" title="var">p</span>;<span class="id" title="var">Q</span>;<span class="id" title="var">p</span>;<span class="id" title="var">Q</span>]).<br/>
+<span class="id" title="keyword">Notation</span> <span class="id" title="var">Y7</span> := ([<span class="id" title="var">Q</span>;<span class="id" title="var">p</span>;<span class="id" title="var">Q</span>]).<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P7</span> : <br/>
+( <span class="id" title="var">true</span> <span class="id" title="var">X7</span> &lt;-&gt; <span class="id" title="var">provable</span> <span class="id" title="var">Y7</span> )<br/>
+/\ ( <span class="id" title="var">true</span> <span class="id" title="var">Y7</span> &lt;-&gt; ~ <span class="id" title="var">provable</span> <span class="id" title="var">X7</span> )<br/>
+/\ ( ( <span class="id" title="var">true</span> <span class="id" title="var">X7</span> /\ ~ <span class="id" title="var">provable</span> <span class="id" title="var">X7</span> ) <br/>
+&nbsp;&nbsp;&nbsp;\/ ( <span class="id" title="var">true</span> <span class="id" title="var">Y7</span> /\ ~ <span class="id" title="var">provable</span> <span class="id" title="var">Y7</span> ) ).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <center> <b> <i> * 8 * </i> </b> </center>  
+<div class="paragraph"> </div>
+
+  <i> Now find sentences X and Y such that X asserts that Y is refutable and Y asserts that X is not refutable. (There are two solutions.) Then show that at least one of the two must be false but not refutable (though there is no way to tell which). </i>  
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P8L</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">X</span> <span class="id" title="var">Y</span>,<br/>
+( <span class="id" title="var">true</span> <span class="id" title="var">X</span> &lt;-&gt; <span class="id" title="var">refutable</span> <span class="id" title="var">Y</span> )<br/>
+-&gt; ( <span class="id" title="var">true</span> <span class="id" title="var">Y</span> &lt;-&gt; ~ <span class="id" title="var">refutable</span> <span class="id" title="var">X</span> )<br/>
+-&gt; ( ( ~ <span class="id" title="var">true</span> <span class="id" title="var">X</span> /\ ~ <span class="id" title="var">refutable</span> <span class="id" title="var">X</span> ) <br/>
+&nbsp;&nbsp;&nbsp;\/ ( ~ <span class="id" title="var">true</span> <span class="id" title="var">Y</span> /\ ~ <span class="id" title="var">refutable</span> <span class="id" title="var">Y</span> ) ).<br/>
+
+<br/>
+<span class="id" title="keyword">Notation</span> <span class="id" title="var">X8</span> := ([<span class="id" title="var">p</span>;<span class="id" title="var">P</span>;<span class="id" title="var">q</span>;<span class="id" title="var">P</span>]).<br/>
+<span class="id" title="keyword">Notation</span> <span class="id" title="var">Y8</span> := ([<span class="id" title="var">Q</span>;<span class="id" title="var">q</span>;<span class="id" title="var">P</span>]).<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P8</span> : <br/>
+( <span class="id" title="var">true</span> <span class="id" title="var">X8</span> &lt;-&gt; <span class="id" title="var">refutable</span> <span class="id" title="var">Y8</span> )<br/>
+/\ ( <span class="id" title="var">true</span> <span class="id" title="var">Y8</span> &lt;-&gt; ~ <span class="id" title="var">refutable</span> <span class="id" title="var">X8</span> )<br/>
+/\ ( ( ~ <span class="id" title="var">true</span> <span class="id" title="var">X8</span> /\ ~ <span class="id" title="var">refutable</span> <span class="id" title="var">X8</span> ) <br/>
+&nbsp;&nbsp;&nbsp;\/ ( ~ <span class="id" title="var">true</span> <span class="id" title="var">Y8</span> /\ ~ <span class="id" title="var">refutable</span> <span class="id" title="var">Y8</span> ) ).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <center> <b> <i> * 9 * </i> </b> </center>  
+<div class="paragraph"> </div>
+
+  <i> Find sentences X and Y such that X asserts that Y is provable and Y asserts that X is refutable. (There are two solutions.) Then show that one of them is true and not provable, or the other is false but not refutable. Which of X, Y is which? </i>  
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P9L</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">X</span> <span class="id" title="var">Y</span>,<br/>
+( <span class="id" title="var">true</span> <span class="id" title="var">X</span> &lt;-&gt; <span class="id" title="var">provable</span> <span class="id" title="var">Y</span> )<br/>
+-&gt; ( <span class="id" title="var">true</span> <span class="id" title="var">Y</span> &lt;-&gt; <span class="id" title="var">refutable</span> <span class="id" title="var">X</span> )<br/>
+-&gt; ( ( ~ <span class="id" title="var">true</span> <span class="id" title="var">X</span> /\ ~ <span class="id" title="var">refutable</span> <span class="id" title="var">X</span> ) <br/>
+&nbsp;&nbsp;&nbsp;\/ ( <span class="id" title="var">true</span> <span class="id" title="var">Y</span> /\ ~ <span class="id" title="var">provable</span> <span class="id" title="var">Y</span> ) ).<br/>
+
+<br/>
+<span class="id" title="keyword">Notation</span> <span class="id" title="var">X9</span> := [<span class="id" title="var">P</span>;<span class="id" title="var">p</span>;<span class="id" title="var">Q</span>].<br/>
+<span class="id" title="keyword">Notation</span> <span class="id" title="var">Y9</span> := [<span class="id" title="var">p</span>;<span class="id" title="var">Q</span>;<span class="id" title="var">p</span>;<span class="id" title="var">Q</span>].<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P9</span> : <br/>
+( <span class="id" title="var">true</span> <span class="id" title="var">X9</span> &lt;-&gt; <span class="id" title="var">provable</span> <span class="id" title="var">Y9</span> )<br/>
+/\ ( <span class="id" title="var">true</span> <span class="id" title="var">Y9</span> &lt;-&gt; <span class="id" title="var">refutable</span> <span class="id" title="var">X9</span> )<br/>
+/\ ( ( ~ <span class="id" title="var">true</span> <span class="id" title="var">X9</span> /\ ~ <span class="id" title="var">refutable</span> <span class="id" title="var">X9</span> ) <br/>
+&nbsp;&nbsp;&nbsp;\/ ( <span class="id" title="var">true</span> <span class="id" title="var">Y9</span> /\ ~ <span class="id" title="var">provable</span> <span class="id" title="var">Y9</span> ) ).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <center> <b> <i> * 10 * </i> </b> </center>  
+<div class="paragraph"> </div>
+
+  <i> Find sentences X and Y such that X asserts that Y is not provable and Y asserts that X is not refutable. Does it follow that one of them must be undecidable? </i>  
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P10L</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">X</span> <span class="id" title="var">Y</span>,<br/>
+( <span class="id" title="var">true</span> <span class="id" title="var">X</span> &lt;-&gt; ~ <span class="id" title="var">provable</span> <span class="id" title="var">Y</span> )<br/>
+-&gt; ( <span class="id" title="var">true</span> <span class="id" title="var">Y</span> &lt;-&gt; ~ <span class="id" title="var">refutable</span> <span class="id" title="var">X</span> )<br/>
+-&gt; ( <span class="id" title="var">undecidable</span> <span class="id" title="var">X</span> \/ <span class="id" title="var">undecidable</span> <span class="id" title="var">Y</span> ).<br/>
+
+<br/>
+<span class="id" title="keyword">Notation</span> <span class="id" title="var">X10</span> := [<span class="id" title="var">Q</span>;<span class="id" title="var">q</span>;<span class="id" title="var">P</span>].<br/>
+<span class="id" title="keyword">Notation</span> <span class="id" title="var">Y10</span> := [<span class="id" title="var">q</span>;<span class="id" title="var">P</span>;<span class="id" title="var">q</span>;<span class="id" title="var">P</span>].<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P10</span> : <br/>
+( <span class="id" title="var">true</span> <span class="id" title="var">X10</span> &lt;-&gt; ~ <span class="id" title="var">provable</span> <span class="id" title="var">Y10</span> )<br/>
+/\ ( <span class="id" title="var">true</span> <span class="id" title="var">Y10</span> &lt;-&gt; ~ <span class="id" title="var">refutable</span> <span class="id" title="var">X10</span> )<br/>
+/\ ( <span class="id" title="var">undecidable</span> <span class="id" title="var">X10</span> \/ <span class="id" title="var">undecidable</span> <span class="id" title="var">Y10</span> ).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <center> <b> <i> * 11 * </i> </b> </center>  
+<div class="paragraph"> </div>
+
+  <i> Find sentences X, Y, and Z such that X asserts that Y is refutable, Y asserts that Z is not refutable and Z asserts that X is provable. Is one of the three necessarily undecidable? </i>  
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P11L</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">X</span> <span class="id" title="var">Y</span> <span class="id" title="var">Z</span>,<br/>
+( <span class="id" title="var">true</span> <span class="id" title="var">X</span> &lt;-&gt; <span class="id" title="var">refutable</span> <span class="id" title="var">Y</span> )<br/>
+-&gt; ( <span class="id" title="var">true</span> <span class="id" title="var">Y</span> &lt;-&gt; ~ <span class="id" title="var">refutable</span> <span class="id" title="var">Z</span> )<br/>
+-&gt; ( <span class="id" title="var">true</span> <span class="id" title="var">Z</span> &lt;-&gt; <span class="id" title="var">provable</span> <span class="id" title="var">X</span> )<br/>
+-&gt; ( <span class="id" title="var">undecidable</span> <span class="id" title="var">X</span> \/ <span class="id" title="var">undecidable</span> <span class="id" title="var">Y</span> <br/>
+&nbsp;&nbsp;&nbsp;\/ <span class="id" title="var">undecidable</span> <span class="id" title="var">Z</span> ).<br/>
+
+<br/>
+<span class="id" title="keyword">Notation</span> <span class="id" title="var">X11</span> := [<span class="id" title="var">p</span>;<span class="id" title="var">p</span>;<span class="id" title="var">Q</span>;<span class="id" title="var">p</span>;<span class="id" title="var">p</span>;<span class="id" title="var">Q</span>].<br/>
+<span class="id" title="keyword">Notation</span> <span class="id" title="var">Y11</span> := [<span class="id" title="var">q</span>;<span class="id" title="var">Q</span>;<span class="id" title="var">p</span>;<span class="id" title="var">p</span>;<span class="id" title="var">Q</span>].<br/>
+<span class="id" title="keyword">Notation</span> <span class="id" title="var">Z11</span> := [<span class="id" title="var">P</span>;<span class="id" title="var">p</span>;<span class="id" title="var">p</span>;<span class="id" title="var">Q</span>].<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P11</span> : <br/>
+( <span class="id" title="var">true</span> <span class="id" title="var">X11</span> &lt;-&gt; <span class="id" title="var">refutable</span> <span class="id" title="var">Y11</span> )<br/>
+/\ ( <span class="id" title="var">true</span> <span class="id" title="var">Y11</span> &lt;-&gt; ~ <span class="id" title="var">refutable</span> <span class="id" title="var">Z11</span> )<br/>
+/\ ( <span class="id" title="var">true</span> <span class="id" title="var">Z11</span> &lt;-&gt; <span class="id" title="var">provable</span> <span class="id" title="var">X11</span> )<br/>
+/\ ( <span class="id" title="var">undecidable</span> <span class="id" title="var">X11</span> \/ <span class="id" title="var">undecidable</span> <span class="id" title="var">Y11</span> <br/>
+&nbsp;&nbsp;&nbsp;\/ <span class="id" title="var">undecidable</span> <span class="id" title="var">Z11</span> ).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <center> <b> <i> * 12 * </i> </b> </center>  
+<div class="paragraph"> </div>
+
+  <i> "I have said before," said the Sorcerer, "that for any system satisfying conditions C1 through C4, there are sentences other than that are true but unprovable in the system. You are now in a position to prove this. Do you see how?" </i>  
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P12</span> : <span class="id" title="tactic">exists</span> <span class="id" title="var">X</span>, <span class="id" title="var">X</span> &lt;&gt; [<span class="id" title="var">Q</span>;<span class="id" title="var">Q</span>] <br/>
+/\ <span class="id" title="var">true</span> <span class="id" title="var">X</span> /\ ~ <span class="id" title="var">provable</span> <span class="id" title="var">X</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <i> "I shall call a system <b>regular</b>," said the Sorcerer, "if the converses of conditions C1 and C3 hold - that is, if X is provable, so is PX and if XX is provable, so is P*X. This together with C1 and C3 tell us that PX is provable if and only if X is provable, and P*X is provable if and only if XX is provable. I might remark that regularity is the analogue of a condition that does hold for the type of systems studied by Goedel, but I'll say more about that another time. Regular systems have some interesting properties, as you will soon see. </i>  
+<div class="paragraph"> </div>
+
+  <i> "Let me define a <b>positive</b> sentence as one of the form PX or P*X and a negative sentence as one of the form QX or X. Positive sentences assert that certain sentences are provable; negative sentences assert that certain sentences are not provable. Let us now note that if the system is regular, then all true positive sentences are provable, and conversely, if all true positive sentences are provable, then the system is regular." </i>  
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Notation</span> <span class="id" title="var">C1C</span> := (<span class="id" title="keyword">forall</span> <span class="id" title="var">X</span>, <br/>
+<span class="id" title="var">provable</span> <span class="id" title="var">X</span> -&gt; <span class="id" title="var">provable</span> (<span class="id" title="var">p</span> :: <span class="id" title="var">X</span>)).<br/>
+
+<br/>
+<span class="id" title="keyword">Notation</span> <span class="id" title="var">C3C</span> := (<span class="id" title="keyword">forall</span> <span class="id" title="var">X</span>, <br/>
+<span class="id" title="var">provable</span> (<span class="id" title="var">X</span> ++ <span class="id" title="var">X</span>) -&gt; <span class="id" title="var">provable</span> (<span class="id" title="var">P</span> :: <span class="id" title="var">X</span>)).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">regular</span> := <span class="id" title="var">C1C</span> /\ <span class="id" title="var">C3C</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">positive</span> : <span class="id" title="var">sentence</span> -&gt; <span class="id" title="keyword">Prop</span> :=<br/>
+| <span class="id" title="var">pos</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">X</span>, <span class="id" title="var">positive</span> (<span class="id" title="var">p</span> :: <span class="id" title="var">X</span>)<br/>
+| <span class="id" title="var">Pos</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">X</span>, <span class="id" title="var">positive</span> (<span class="id" title="var">P</span> :: <span class="id" title="var">X</span>).<br/>
+<span class="id" title="keyword">Hint Constructors</span> <span class="id" title="var">positive</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">negative</span> : <span class="id" title="var">sentence</span> -&gt; <span class="id" title="keyword">Prop</span> :=<br/>
+| <span class="id" title="var">neg</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">X</span>, <span class="id" title="var">negative</span> (<span class="id" title="var">q</span> :: <span class="id" title="var">X</span>)<br/>
+| <span class="id" title="var">Neg</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">X</span>, <span class="id" title="var">negative</span> (<span class="id" title="var">Q</span> :: <span class="id" title="var">X</span>).<br/>
+<span class="id" title="keyword">Hint Constructors</span> <span class="id" title="var">negative</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <center> <b> <i> * 13 * </i> </b> </center>  
+<div class="paragraph"> </div>
+
+  <i> Why is it that the system is regular if and only if all true positive sentences are provable? </i>  
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P13</span> : <span class="id" title="var">regular</span> &lt;-&gt; <span class="id" title="keyword">forall</span> <span class="id" title="var">X</span>, <br/>
+<span class="id" title="var">positive</span> <span class="id" title="var">X</span> -&gt; <span class="id" title="var">true</span> <span class="id" title="var">X</span> -&gt; <span class="id" title="var">provable</span> <span class="id" title="var">X</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P13C</span> : <span class="id" title="var">regular</span> &lt;-&gt; <span class="id" title="keyword">forall</span> <span class="id" title="var">X</span>, <br/>
+<span class="id" title="var">positive</span> <span class="id" title="var">X</span> -&gt; ~ <span class="id" title="var">provable</span> <span class="id" title="var">X</span> -&gt; ~ <span class="id" title="var">true</span> <span class="id" title="var">X</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <i> "And so," continued the Sorcerer, "we see that in a regular system, only negative sentences can be true but unprovable. Any sentence that asserts that something is provable, if true, must itself be provable." </i>  
+<div class="paragraph"> </div>
+
+  <center> <b> <i> * 14 * </i> </b> </center>  
+<div class="paragraph"> </div>
+
+  <i> If a system is regular, does it necessarily follow that every false negative sentence is refutable? </i>  
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P14</span> : <span class="id" title="var">regular</span> -&gt; <span class="id" title="keyword">forall</span> <span class="id" title="var">X</span>, <br/>
+<span class="id" title="var">negative</span> <span class="id" title="var">X</span> -&gt; ~ <span class="id" title="var">true</span> <span class="id" title="var">X</span> -&gt; <span class="id" title="var">refutable</span> <span class="id" title="var">X</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P14C</span> : <span class="id" title="var">regular</span> -&gt; <span class="id" title="keyword">forall</span> <span class="id" title="var">X</span>, <br/>
+<span class="id" title="var">negative</span> <span class="id" title="var">X</span> -&gt; ~ <span class="id" title="var">refutable</span> <span class="id" title="var">X</span> -&gt; <span class="id" title="var">true</span> <span class="id" title="var">X</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <i> "Regular systems have some interesting features," said the Sorcerer, "as you will now see." </i>  
+<div class="paragraph"> </div>
+
+  <center> <b> <i> * 15 * </i> </b> </center>  
+<div class="paragraph"> </div>
+
+  <i> "For one thing, in a regular system, the ambiguities of Problems 7 through 10 disappear - that is, if we assume the system is regular, then in Problem 7 we can tell whether it is X or Y that is true but unprovable. Which is it? And in Problem 8, is it X or Y that is false but not refutable? And for Problem 9, is it X that is true but provable, or is it Y that is false but not refutable? And for Problem 10, is it X that is undecidable? All this, of course, with the assumption of regularity." </i>  
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P15A</span> : <br/>
+<span class="id" title="var">regular</span> -&gt; <span class="id" title="var">true</span> <span class="id" title="var">Y7</span> /\ ~ <span class="id" title="var">provable</span> <span class="id" title="var">Y7</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P15B</span> : <br/>
+<span class="id" title="var">regular</span> -&gt; ~ <span class="id" title="var">true</span> <span class="id" title="var">X8</span> /\ ~ <span class="id" title="var">refutable</span> <span class="id" title="var">X8</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P15C</span> : <br/>
+<span class="id" title="var">regular</span> -&gt; ~ <span class="id" title="var">true</span> <span class="id" title="var">X9</span> /\ ~ <span class="id" title="var">refutable</span> <span class="id" title="var">X9</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P15D</span> : <br/>
+<span class="id" title="var">regular</span> -&gt; <span class="id" title="var">undecidable</span> <span class="id" title="var">Y10</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+While making this tutorial, I noticed that regularity also eliminates ambiguity for P11. Although not part of the original text, it is an obvious extension, so I include it here. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P15E</span> : <br/>
+<span class="id" title="var">regular</span> -&gt; <span class="id" title="var">undecidable</span> <span class="id" title="var">Z11</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <i> "Let us note," said the Sorcerer, "that for any system satisfying our given conditions C1 through C4, whether the system is regular or not, if E is any string of P's, then if EX is provable, so is X. This follows by repeated applications of C1. For example, if PPPX is provable, so is PPX (by C1); hence so is PX (again by C1); hence so is X (again by C1). You can readily see that the same holds if E contains four or more P's—or if E contains two P's or just one P. And so if E is any string of P's, if EX is provable, so is X. For a regular system, the converse also holds - that is, if X is provable, so is EX, where E is any string of P's. For if X is provable and the system is regular, then PX is provable (by regularity); hence so is PPX, and so forth. And so for a regular system, if E is any string of P's, then EX is provable if and only if X is provable. </i>  
+<div class="paragraph"> </div>
+
+  <i> "Another thing about regular systems is this: For any system satisfying C1 through C4, P*X is true if and only if PXX is true, for each is true if and only if XX is provable. However, without regularity, there is no reason to believe that P*X is provable if and only if PXX is provable. If either one is provable, then the other one is true, but that doesn't mean that the other one is provable. However, if the system is regular, then P*X is provable if and only if PXX is provable." </i>  
+<div class="paragraph"> </div>
+
+  <center> <b> <i> * 16 * </i> </b> </center>  
+<div class="paragraph"> </div>
+
+  <i> Why is it that in a regular system, P*X is provable if and only if PXX is provable? </i>  
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P16</span> : <span class="id" title="var">regular</span> -&gt; <span class="id" title="keyword">forall</span> <span class="id" title="var">X</span>, <br/>
+( <span class="id" title="var">provable</span> ( <span class="id" title="var">P</span> :: <span class="id" title="var">X</span> ) <br/>
+&lt;-&gt; <span class="id" title="var">provable</span> ( <span class="id" title="var">p</span> :: <span class="id" title="var">X</span> ++ <span class="id" title="var">X</span> ) ).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <i> "Now comes a particularly interesting thing about regular systems," said the Sorcerer. "We have already seen that in any system satisfying conditions C1 through C4, there are infinitely many sentences that are true for the system but not provable in the system. But this does not mean that there are infinitely many sentences such that each one is true for <b>all</b> systems satisfying C1 through C4 and at the same time unprovable for <b>all</b> such systems. However, there are infinitely many sentences X such that for every <b>regular</b> system satisfying C1 through C4, each X is true for the system but unprovable in the system." </i>  
+<div class="paragraph"> </div>
+
+  <center> <b> <i> * 17 * </i> </b> </center>  
+<div class="paragraph"> </div>
+
+  <i> Can you prove this? </i>  
+</div>
+<div class="code">
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+We first need some way to express infinity in Coq. The easiest way is to demonstrate countable infinity by an injective function from natural numbers. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">injective</span> {<span class="id" title="var">X</span> <span class="id" title="var">Y</span> : <span class="id" title="keyword">Type</span>} <br/>
+(<span class="id" title="var">f</span> : <span class="id" title="var">X</span> -&gt; <span class="id" title="var">Y</span>) := <br/>
+<span class="id" title="keyword">forall</span> <span class="id" title="var">x</span> <span class="id" title="var">y</span> : <span class="id" title="var">X</span>, <span class="id" title="var">f</span> <span class="id" title="var">x</span> = <span class="id" title="var">f</span> <span class="id" title="var">y</span> -&gt; <span class="id" title="var">x</span> = <span class="id" title="var">y</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">infinite</span> (<span class="id" title="var">X</span> : <span class="id" title="keyword">Type</span>) <br/>
+(<span class="id" title="var">P</span> : <span class="id" title="var">X</span> -&gt; <span class="id" title="keyword">Prop</span>) := <br/>
+<span class="id" title="tactic">exists</span> (<span class="id" title="var">f</span> : <span class="id" title="var">nat</span> -&gt; <span class="id" title="var">X</span>), <br/>
+<span class="id" title="var">injective</span> <span class="id" title="var">f</span> /\ <span class="id" title="keyword">forall</span> <span class="id" title="var">n</span>, <span class="id" title="var">P</span> (<span class="id" title="var">f</span> <span class="id" title="var">n</span>).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<span class="inlinecode"><span class="id" title="var">infinite</span></span> <span class="inlinecode"><span class="id" title="var">X</span></span> <span class="inlinecode"><span class="id" title="var">P</span></span> asserts that there are an infinite number of <span class="inlinecode"><span class="id" title="var">X</span></span>s that have property <span class="inlinecode"><span class="id" title="var">P</span></span>. 
+To define our injective function, use the fact that QXP*QXP* is a true unprovable sentence in any regular system, where X is any number of consecutive Ps. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">pstring</span> (<span class="id" title="var">n</span> : <span class="id" title="var">nat</span>) : <span class="id" title="var">sentence</span> :=<br/>
+<span class="id" title="keyword">match</span> <span class="id" title="var">n</span> <span class="id" title="keyword">with</span><br/>
+| 0    =&gt; []<br/>
+| <span class="id" title="var">S</span> <span class="id" title="var">n&acute;</span> =&gt; <span class="id" title="var">p</span> :: <span class="id" title="var">pstring</span> <span class="id" title="var">n&acute;</span><br/>
+<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">goedel</span> (<span class="id" title="var">n</span> : <span class="id" title="var">nat</span>) : <span class="id" title="var">sentence</span> :=<br/>
+( [<span class="id" title="var">q</span>] ++ <span class="id" title="var">pstring</span> <span class="id" title="var">n</span> ++ [<span class="id" title="var">P</span>] ) <br/>
+++ ( [<span class="id" title="var">q</span>] ++ <span class="id" title="var">pstring</span> <span class="id" title="var">n</span> ++ [<span class="id" title="var">P</span>] ).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<span class="inlinecode"><span class="id" title="var">goedel</span></span> is our desired function. Its injectivity can be proved from the fact that different arguments to <span class="inlinecode"><span class="id" title="var">goedel</span></span> always produce sentences of different lengths. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">goedel_length</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">n</span>,<br/>
+<span class="id" title="var">length</span> (<span class="id" title="var">goedel</span> <span class="id" title="var">n</span>) = 4 + (2 * <span class="id" title="var">n</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">goedel_inj</span> : <span class="id" title="var">injective</span> <span class="id" title="var">goedel</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Lemmas P17L1-6 prove that <span class="inlinecode"><span class="id" title="var">goedel</span></span> <span class="inlinecode"><span class="id" title="var">n</span></span> is true and unprovable in all regular systems for any <span class="inlinecode"><span class="id" title="var">n</span></span>. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">P17L1</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">n</span> <span class="id" title="var">X</span>,<br/>
+<span class="id" title="var">positive</span> <span class="id" title="var">X</span> -&gt; <span class="id" title="var">positive</span> (<span class="id" title="var">pstring</span> <span class="id" title="var">n</span> ++ <span class="id" title="var">X</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P17L2</span> : <br/>
+<span class="id" title="var">regular</span> -&gt; <span class="id" title="keyword">forall</span> <span class="id" title="var">n</span> <span class="id" title="var">X</span>, <br/>
+(<span class="id" title="var">true</span> ( ( <span class="id" title="var">pstring</span> <span class="id" title="var">n</span> ) ++ <span class="id" title="var">P</span> :: <span class="id" title="var">X</span>) <br/>
+&lt;-&gt; <span class="id" title="var">true</span> (<span class="id" title="var">P</span> :: <span class="id" title="var">X</span>)).<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P17L3</span> :<br/>
+<span class="id" title="var">regular</span> -&gt; <span class="id" title="keyword">forall</span> <span class="id" title="var">n</span> <span class="id" title="var">X</span>, <br/>
+( <span class="id" title="var">true</span> ( [<span class="id" title="var">q</span>] ++ <span class="id" title="var">pstring</span> <span class="id" title="var">n</span> ++ [<span class="id" title="var">P</span>] ++ <span class="id" title="var">X</span> )<br/>
+&lt;-&gt; ~ <span class="id" title="var">true</span> ( <span class="id" title="var">pstring</span> <span class="id" title="var">n</span> ++ [<span class="id" title="var">P</span>] ++ <span class="id" title="var">X</span>) ).<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P17L4</span> :<br/>
+<span class="id" title="var">regular</span> -&gt; <span class="id" title="keyword">forall</span> <span class="id" title="var">n</span> <span class="id" title="var">X</span>, <br/>
+( <span class="id" title="var">true</span> ( [<span class="id" title="var">q</span>] ++ <span class="id" title="var">pstring</span> <span class="id" title="var">n</span> ++ [<span class="id" title="var">P</span>] ++ <span class="id" title="var">X</span> ) <br/>
+&lt;-&gt; <span class="id" title="var">true</span> ( <span class="id" title="var">Q</span> :: <span class="id" title="var">X</span> ) ).<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P17L5</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">X</span>,<br/>
+( <span class="id" title="var">true</span> ( <span class="id" title="var">X</span> ++ <span class="id" title="var">X</span> ) &lt;-&gt; <span class="id" title="var">true</span> ( <span class="id" title="var">Q</span> :: <span class="id" title="var">X</span> ) ) -&gt;<br/>
+<span class="id" title="var">true</span> ( <span class="id" title="var">X</span> ++ <span class="id" title="var">X</span> ) /\ ~ <span class="id" title="var">provable</span> ( <span class="id" title="var">X</span> ++ <span class="id" title="var">X</span> ).<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P17L6</span> : <span class="id" title="var">regular</span> -&gt; <span class="id" title="keyword">forall</span> <span class="id" title="var">n</span>, <br/>
+<span class="id" title="var">true</span> (<span class="id" title="var">goedel</span> <span class="id" title="var">n</span>) /\ ~ <span class="id" title="var">provable</span> (<span class="id" title="var">goedel</span> <span class="id" title="var">n</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P17</span> : <span class="id" title="var">regular</span> -&gt; <span class="id" title="var">infinite</span> <span class="id" title="var">sentence</span><br/>
+( <span class="id" title="keyword">fun</span> <span class="id" title="var">X</span> =&gt; <span class="id" title="var">true</span> <span class="id" title="var">X</span> /\ ~ <span class="id" title="var">provable</span> <span class="id" title="var">X</span> ).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <i> "What I have shown you today," said the Sorcerer, "has applications to the field known as <b>metamathematics</b> - the theory of mathematical systems. My miniature system provides one approach to Goedel's famous incompleteness theorem: </i>  
+<div class="paragraph"> </div>
+
+  <i> "Let us consider a mathematical system (M) in which there are well-defined rules specifying certain sentences as true and others as provable in (M), and suppose that we wish to know whether (M) is <b>complete</b> in the sense that all true sentences of (M) are provable in (M). Now it can be shown that if (M) is any one of a wide variety of systems investigated by Kurt Goedel, it is possible to <b>translate</b> my system into (M) in the sense that corresponding to each sentence X of my system, there is a sentence X* of the system (M) such that X is true in my system if and only if the corresponding sentence X* of (M) is a true sentence of (M), and also, X is provable in my system if and only if X* is provable in (M). Do you realize the ramifications of this? It means that for every such system (M), there must be a true sentence of (M) that is not provable in (M) - its truth can be known only by going outside of the system. Thus, no system (M) into which my system is translatable can possibly be complete. Do you see why this is so?" </i>  
+<div class="paragraph"> </div>
+
+  <center> <b> <i> * 18 * </i> </b> </center>  
+<div class="paragraph"> </div>
+
+  <i> Why is this so? </i>  
+</div>
+<div class="code">
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+A reasonable assumption in formalizing P18 is that M-sentences are a type, and M-truth and M-provability are predicates on that type. Then we can define traslatability as 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">translatable</span> (<span class="id" title="var">Msentence</span> : <span class="id" title="keyword">Type</span>) <br/>
+(<span class="id" title="var">Mtrue</span> : <span class="id" title="var">Msentence</span> -&gt; <span class="id" title="keyword">Prop</span>)  <br/>
+(<span class="id" title="var">Mprovable</span> : <span class="id" title="var">Msentence</span> -&gt; <span class="id" title="keyword">Prop</span>) : <span class="id" title="keyword">Prop</span> := <br/>
+| <span class="id" title="var">trnsl</span> : ( <span class="id" title="keyword">forall</span> (<span class="id" title="var">X</span> : <span class="id" title="var">sentence</span>), <br/>
+&nbsp;&nbsp;<span class="id" title="tactic">exists</span> (<span class="id" title="var">X0</span> : <span class="id" title="var">Msentence</span>), <br/>
+&nbsp;&nbsp;( <span class="id" title="var">Mtrue</span> <span class="id" title="var">X0</span> &lt;-&gt; <span class="id" title="var">true</span> <span class="id" title="var">X</span> )<br/>
+&nbsp;&nbsp;/\ ( <span class="id" title="var">Mprovable</span> <span class="id" title="var">X0</span> &lt;-&gt; <span class="id" title="var">provable</span> <span class="id" title="var">X</span> ) )<br/>
+&nbsp;&nbsp;-&gt; (<span class="id" title="var">translatable</span> <span class="id" title="var">Msentence</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Mtrue</span> <span class="id" title="var">Mprovable</span>) .<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+from which P18 easily follows. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">P18</span> : <br/>
+<span class="id" title="keyword">forall</span> <span class="id" title="var">Msentence</span> <span class="id" title="var">Mtrue</span> <span class="id" title="var">Mprovable</span>,  <br/>
+(<span class="id" title="var">translatable</span> <span class="id" title="var">Msentence</span> <span class="id" title="var">Mtrue</span> <span class="id" title="var">Mprovable</span>) <br/>
+-&gt; <span class="id" title="tactic">exists</span> (<span class="id" title="var">X0</span> : <span class="id" title="var">Msentence</span>),<br/>
+<span class="id" title="var">Mtrue</span> <span class="id" title="var">X0</span> /\ ~ <span class="id" title="var">Mprovable</span> <span class="id" title="var">X0</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ <i> All this is most remarkable!" </i>  
+<div class="paragraph"> </div>
+
+  <i> "It certainly is!" agreed Alexander. </i>  
+<div class="paragraph"> </div>
+
+  <i> "What will you tell us about next time?" asked Annabelle. </i>  
+<div class="paragraph"> </div>
+
+  <i> "On your next visit," replied the Sorcerer with a mischievous smile, "I have a very special paradox prepared for you." </i>  
+<div class="paragraph"> </div>
+
+  <i> "I'm looking forward to it," said Annabelle. "I've always been intrigued by paradoxes." </i>  
+</div>
+<div class="code">
+
+<br/>
+</div>
+<table>
+<tr>
+<td>Global Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td><a href="index.html#global_M">M</a></td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(1 entry)</td>
+</tr>
+<tr>
+<td>Library Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td><a href="index.html#library_M">M</a></td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(1 entry)</td>
+</tr>
+</table>
+<hr/>
+<h1>Global Index</h1>
+<a name="global_M"></a><h2>M </h2>
+<a href="MGL.html">MGL</a> [library]<br/>
+<br/><br/><hr/>
+<h1>Library Index</h1>
+<a name="library_M"></a><h2>M </h2>
+<a href="MGL.html">MGL</a> <br/>
+<br/><br/><hr/><table>
+<tr>
+<td>Global Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td><a href="index.html#global_M">M</a></td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(1 entry)</td>
+</tr>
+<tr>
+<td>Library Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td><a href="index.html#library_M">M</a></td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(1 entry)</td>
+</tr>
+</table>
+<hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>
